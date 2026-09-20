@@ -1,0 +1,48 @@
+begin;
+-- Isolate ranking fixtures; all changes are rolled back.
+delete from public.topic_visits;
+select plan(22);
+insert into auth.users(id,email,raw_user_meta_data) values
+ ('d6000000-0000-4000-8000-000000000001','beta-fixture@example.test','{"username":"beta_fixture"}'),
+ ('d6000000-0000-4000-8000-000000000002','beta-other@example.test','{"username":"beta_other"}');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','d6000000-0000-4000-8000-000000000001',true);
+select set_config('test.topic',(select id::text from public.create_topic('Beta fixture first')),true);
+select lives_ok($$select public.create_topic('Beta fixture '||n) from generate_series(2,5) n$$,'Five daily topics permitted');
+select throws_ok($$select public.create_topic('Beta fixture sixth')$$,'PT429',null,'Sixth daily topic rejected');
+select lives_ok($$select public.create_topic('Beta fixture first')$$,'Existing topic still resolves at quota');
+select is(public.delete_topic((select id from public.find_topic('Beta fixture 2'))),true,'Owner deletes a topic');
+select throws_ok($$select public.create_topic('Beta fixture after delete')$$,'PT429',null,'Deletion does not refund the limit');
+select throws_ok($$update public.daily_activity set topics=0$$,'42501',null,'Account cannot reset its own quota');
+select is(public.add_comment(current_setting('test.topic')::uuid,'d6100000-0000-4000-8000-000000000001','First comment'), 'd6100000-0000-4000-8000-000000000001'::uuid,'Authenticated comment persists');
+select lives_ok($$select public.add_comment(current_setting('test.topic')::uuid,'d6100000-0000-4000-8000-000000000001','First comment')$$,'Retry is idempotent');
+select is(public.topic_comments(current_setting('test.topic')::uuid)->>'total','1','Retry creates no duplicate');
+select is(public.topic_comments(current_setting('test.topic')::uuid)#>>'{items,0,canDelete}','true','Author can delete own comment');
+select set_config('request.jwt.claim.sub','d6000000-0000-4000-8000-000000000002',true);
+select throws_ok($$select public.delete_own_comment('d6100000-0000-4000-8000-000000000001')$$,'42501',null,'Other users cannot delete the comment');
+select lives_ok($$select public.add_comment(current_setting('test.topic')::uuid,'d6100000-0000-4000-8000-000000000002','A reply','d6100000-0000-4000-8000-000000000001')$$,'Replies persist');
+select set_config('test.other',(select id::text from public.create_topic('Beta other topic')),true);
+select throws_ok($$select public.add_comment(current_setting('test.other')::uuid,'d6100000-0000-4000-8000-000000000003','Wrong topic reply','d6100000-0000-4000-8000-000000000001')$$,'22023',null,'Cross-topic replies rejected');
+set local role anon;
+select set_config('request.jwt.claim.sub','',true);
+select is(public.topic_comments(current_setting('test.topic')::uuid)->>'total','2','Guests read saved discussion');
+select ok(not (public.topic_comments(current_setting('test.topic')::uuid)#>'{items,0}' ? 'author_id'),'Private identity not exposed');
+select throws_ok($$select public.add_comment(current_setting('test.topic')::uuid,gen_random_uuid(),'Anonymous')$$,'42501',null,'Guests cannot comment');
+select throws_ok($$select public.record_topic_visit(current_setting('test.topic')::uuid,repeat('a',64))$$,'42501',null,'Guests cannot bypass visit endpoint');
+set local role service_role;
+select is(public.record_topic_visit(current_setting('test.topic')::uuid,repeat('a',64)),true,'Validated visit recorded');
+select public.record_topic_visit(current_setting('test.topic')::uuid,repeat('a',64));
+reset role;
+select is((select visits from public.popular_topics() where id=current_setting('test.topic')::uuid),1::bigint,'Repeat daily visits count once');
+select public.record_topic_visit(current_setting('test.topic')::uuid,repeat('b',64));
+reset role;
+select is((select visits from public.popular_topics() where id=current_setting('test.topic')::uuid),2::bigint,'Distinct readers contribute');
+reset role;
+update public.topic_visits set day=current_date-10 where topic_id=current_setting('test.topic')::uuid;
+select is((select visits from public.popular_topics() where id=current_setting('test.topic')::uuid),2::bigint,'Ranking includes visits outside the week');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','d6000000-0000-4000-8000-000000000001',true);
+select public.delete_topic(current_setting('test.topic')::uuid);
+select is((select count(*) from public.comments where topic_id=current_setting('test.topic')::uuid),0::bigint,'Topic deletion removes the whole discussion');
+select * from finish();
+rollback;

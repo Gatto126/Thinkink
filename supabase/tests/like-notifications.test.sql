@@ -1,0 +1,48 @@
+begin;
+select plan(13);
+insert into auth.users(id,email,raw_user_meta_data) values
+ ('fe000000-0000-4000-8000-000000000001','like_notice1@example.test','{"username":"like_notice1"}'),
+ ('fe000000-0000-4000-8000-000000000002','like_notice2@example.test','{"username":"like_notice2"}'),
+ ('fe000000-0000-4000-8000-000000000003','like_notice3@example.test','{"username":"like_notice3"}');
+insert into public.topics(id,title,created_by) values ('fe100000-0000-4000-8000-000000000001','Like notification fixture','fe000000-0000-4000-8000-000000000001');
+insert into public.comments(id,topic_id,author_id,body) values ('fe200000-0000-4000-8000-000000000001','fe100000-0000-4000-8000-000000000001','fe000000-0000-4000-8000-000000000001','Root to like');
+insert into public.comments(id,topic_id,author_id,parent_id,body) values ('fe200000-0000-4000-8000-000000000002','fe100000-0000-4000-8000-000000000001','fe000000-0000-4000-8000-000000000002','fe200000-0000-4000-8000-000000000001','Reply to like');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','fe000000-0000-4000-8000-000000000001',true);
+select public.set_comment_like('fe200000-0000-4000-8000-000000000001',true);
+reset role;
+select is((select count(*) from public.notifications where kind='comment_like' and comment_id='fe200000-0000-4000-8000-000000000001'),0::bigint,'Own likes never notify');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','fe000000-0000-4000-8000-000000000002',true);
+select public.set_comment_like('fe200000-0000-4000-8000-000000000001',true);
+select public.set_comment_like('fe200000-0000-4000-8000-000000000001',true);
+reset role;
+select is((select count(*) from public.notifications where kind='comment_like' and comment_id='fe200000-0000-4000-8000-000000000001'),1::bigint,'Repeated writes create one notification');
+select is((select recipient_id from public.notifications where kind='comment_like' and comment_id='fe200000-0000-4000-8000-000000000001'),'fe000000-0000-4000-8000-000000000001'::uuid,'Comment author receives the like');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','fe000000-0000-4000-8000-000000000003',true);
+select public.set_comment_like('fe200000-0000-4000-8000-000000000001',true);
+select public.set_comment_like('fe200000-0000-4000-8000-000000000002',true);
+reset role;
+select is((select count(*) from public.notifications where kind='comment_like' and comment_id='fe200000-0000-4000-8000-000000000001'),2::bigint,'Different actors have distinct like events');
+select is((select recipient_id from public.notifications where kind='comment_like' and comment_id='fe200000-0000-4000-8000-000000000002'),'fe000000-0000-4000-8000-000000000002'::uuid,'Reply author receives the like');
+select is((select count(*) from public.notifications where kind='reply' and comment_id='fe200000-0000-4000-8000-000000000002'),1::bigint,'Existing reply event survives');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','fe000000-0000-4000-8000-000000000002',true);
+select is(public.my_notifications()->>'unreadCount','1','Private recipient inbox includes its like');
+select is(public.my_notifications()#>>'{items,0,kind}','comment_like','Like event reaches inbox contract');
+select is(public.my_notifications()#>>'{items,0,commentId}','fe200000-0000-4000-8000-000000000002','Notification targets exact reply');
+select public.read_notifications();
+select set_config('request.jwt.claim.sub','fe000000-0000-4000-8000-000000000003',true);
+select public.set_comment_like('fe200000-0000-4000-8000-000000000002',false);
+select public.set_comment_like('fe200000-0000-4000-8000-000000000002',true);
+select set_config('request.jwt.claim.sub','fe000000-0000-4000-8000-000000000002',true);
+select is(public.my_notifications()->>'unreadCount','0','Re-like does not resend a read event');
+select is(jsonb_array_length(public.my_notifications()->'items'),1,'Re-like keeps one historical event');
+reset role;
+delete from auth.users where id='fe000000-0000-4000-8000-000000000003';
+select is((select count(*) from public.notifications where actor_id='fe000000-0000-4000-8000-000000000003'),0::bigint,'Deleted actors remove events');
+delete from public.topics where id='fe100000-0000-4000-8000-000000000001';
+select is((select count(*) from public.notifications where recipient_id in ('fe000000-0000-4000-8000-000000000001','fe000000-0000-4000-8000-000000000002')),0::bigint,'Topic removal cascades through like notifications');
+select * from finish();
+rollback;

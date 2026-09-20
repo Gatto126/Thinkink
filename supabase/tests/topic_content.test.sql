@@ -1,0 +1,50 @@
+begin;
+select plan(24);
+-- Isolate counters transactionally; all existing rows are restored by rollback.
+delete from public.provider_attempts;
+update public.provider_limits set paused=false,cooldown_until=null;
+insert into auth.users(id,email,raw_user_meta_data) values
+ ('f7000000-0000-4000-8000-000000000001','content-fixture@example.test','{"username":"content_fixture"}');
+insert into public.topics(id,title,created_by) values
+ ('f7100000-0000-4000-8000-000000000001','Content fixture one','f7000000-0000-4000-8000-000000000001'),
+ ('f7100000-0000-4000-8000-000000000002','Content fixture two','f7000000-0000-4000-8000-000000000001');
+set local role anon;
+select throws_ok($$select public.claim_topic_content('f7100000-0000-4000-8000-000000000001','f7000000-0000-4000-8000-000000000001')$$,'42501','permission denied for function claim_topic_content','Public readers cannot trigger providers');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','f7000000-0000-4000-8000-000000000001',true);
+select throws_ok($$select public.reserve_provider_call('serper','f7100000-0000-4000-8000-000000000001',gen_random_uuid())$$,'42501','permission denied for function reserve_provider_call','Ordinary users cannot reserve provider budget directly');
+select throws_ok($$select public.content_budget_status()$$,'42501','Moderator access required','Budget details require moderator access');
+set local role service_role;
+select set_config('test.content_job',public.claim_topic_content('f7100000-0000-4000-8000-000000000001','f7000000-0000-4000-8000-000000000001')->>'jobId',true);
+select ok(current_setting('test.content_job')::uuid is not null,'Owner preparation receives a durable claim');
+select is(public.claim_topic_content('f7100000-0000-4000-8000-000000000001','f7000000-0000-4000-8000-000000000001')->>'claimed','false','Concurrent/repeated preparation cannot take the same claim');
+select is(public.claim_topic_content('f7100000-0000-4000-8000-000000000002','f7000000-0000-4000-8000-000000000099')->>'claimed','false','Unrelated identity cannot prepare content');
+select set_config('test.search_attempt',public.reserve_provider_call('serper','f7100000-0000-4000-8000-000000000001',current_setting('test.content_job')::uuid)->>'id',true);
+select ok(current_setting('test.search_attempt')::uuid is not null,'Search budget is reserved before external work');
+select is(public.reserve_provider_call('serper','f7100000-0000-4000-8000-000000000001',current_setting('test.content_job')::uuid)->>'allowed','false','Only one search per claim');
+select is(public.reserve_provider_call('openrouter','f7100000-0000-4000-8000-000000000001',current_setting('test.content_job')::uuid)->>'allowed','true','Primary AI attempt reserved');
+select is(public.reserve_provider_call('openrouter','f7100000-0000-4000-8000-000000000001',current_setting('test.content_job')::uuid)->>'allowed','true','One fallback is allowed');
+select is(public.reserve_provider_call('openrouter','f7100000-0000-4000-8000-000000000001',current_setting('test.content_job')::uuid)->>'allowed','false','Further AI retries are blocked');
+select ok(public.save_topic_news('f7100000-0000-4000-8000-000000000001',current_setting('test.content_job')::uuid,'[{"title":"A saved headline","snippet":"The exact supplied excerpt"}]'),'News persists before summary');
+select ok(not public.save_topic_news('f7100000-0000-4000-8000-000000000001',gen_random_uuid(),'[]'),'A stale job cannot overwrite news');
+select ok(public.finish_topic_content('f7100000-0000-4000-8000-000000000001',current_setting('test.content_job')::uuid,'ready','{"text":"A saved overview"}','test/model:free','input-hash'),'Overview commit succeeds');
+select is((select input_snapshot#>>'{articles,0,snippet}' from public.topic_content where topic_id='f7100000-0000-4000-8000-000000000001'),'The exact supplied excerpt','Original input excerpts are frozen');
+select is(public.claim_topic_content('f7100000-0000-4000-8000-000000000001','f7000000-0000-4000-8000-000000000001',true)->>'claimed','false','A ready topic never regenerates through retries');
+set local role anon;
+select is((select status from public.topic_content where topic_id='f7100000-0000-4000-8000-000000000001'),'ready','Saved content is publicly readable');
+select throws_ok($$select input_snapshot from public.topic_content$$,'42501','permission denied for table topic_content','Private model inputs are not publicly selectable');
+reset role;
+delete from public.topics where id='f7100000-0000-4000-8000-000000000001';
+select is((select count(*)::integer from public.provider_attempts),3,'Deleting a topic does not refund consumed reservations');
+select is((select count(*)::integer from public.topic_content where topic_id='f7100000-0000-4000-8000-000000000001'),0,'Topic deletion cascades to saved content');
+update public.provider_limits set daily_limit=1 where provider='serper';
+set local role service_role;
+select set_config('test.content_job',public.claim_topic_content('f7100000-0000-4000-8000-000000000002','f7000000-0000-4000-8000-000000000001')->>'jobId',true);
+select is(public.reserve_provider_call('serper','f7100000-0000-4000-8000-000000000002',current_setting('test.content_job')::uuid)->>'reason','budget','Daily caps remain enforced after topic deletion');
+select public.record_provider_result(current_setting('test.search_attempt')::uuid,'http_429',true);
+select ok((select cooldown_until>now() from public.provider_limits where provider='serper'),'Provider quota errors open a persistent cooldown');
+select ok((select cooldown_until<=now()+interval '16 minutes' from public.provider_limits where provider='serper'),'Unknown 429 is a bounded transient cooldown, not a whole day');
+select public.record_provider_result(current_setting('test.search_attempt')::uuid,'http_402',true);
+select ok((select cooldown_until>=now()+interval '24 hours' from public.provider_limits where provider='serper'),'Payment errors retain the longer protective cooldown');
+select * from finish();
+rollback;

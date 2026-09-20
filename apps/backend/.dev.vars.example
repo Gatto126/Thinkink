@@ -1,0 +1,21 @@
+# Run npm run db:configure to populate an ignored .dev.vars from local Supabase.
+# Never commit credentials or use VITE_ variables for backend secrets.
+SUPABASE_URL=""
+SUPABASE_PUBLISHABLE_KEY=""
+SUPABASE_SECRET_KEY=""
+SIGNUP_INVITE_CODE=""
+# Automatic email confirmation requires both app and Supabase to be loopback URLs.
+AUTH_LOCAL_SIGNUP="false"
+# Invited HTTPS beta: same immediate signup, no confirmation emails.
+AUTH_BETA_SIGNUP="false"
+# Explicit browser origins are needed when using Vite's development proxy.
+AUTH_ALLOWED_ORIGINS="http://127.0.0.1:4173,http://127.0.0.1:5173"
+SERPER_API_KEY=""
+OPENROUTER_API_KEY=""
+OPENROUTER_MODEL=""
+OPENROUTER_FALLBACK_MODEL=""
+# Explicit opt-in; no provider calls for topic reads or search suggestions.
+CONTENT_PROVIDERS_ENABLED="false"
+# Only explicit :free model IDs are accepted. No paid or automatic router fallback.
+# OPENROUTER_MODEL="nex-agi/nex-n2.5-mini:free"
+# OPENROUTER_FALLBACK_MODEL="nvidia/nemotron-3-super-120b-a12b:free"

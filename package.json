@@ -1,0 +1,51 @@
+{
+  "name": "thinkink",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "^22.13.0 || >=24.0.0"
+  },
+  "workspaces": [
+    "apps/frontend",
+    "apps/backend",
+    "packages/shared"
+  ],
+  "scripts": {
+    "predev": "npm run build:frontend && npm run types --workspace @thinkink/backend",
+    "dev": "concurrently --kill-others --names frontend,backend \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "npm run dev --workspace @thinkink/frontend",
+    "dev:backend": "npm run dev --workspace @thinkink/backend",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "npm run build --workspace @thinkink/frontend",
+    "build:backend": "npm run build --workspace @thinkink/backend",
+    "preview": "npm run preview --workspace @thinkink/backend",
+    "typecheck": "npm run typecheck --workspaces && tsc --noEmit",
+    "lint": "eslint .",
+    "test": "npm run test --workspaces --if-present",
+    "test:e2e": "playwright test",
+    "db:start": "node scripts/local-db.mjs start",
+    "db:stop": "node scripts/local-db.mjs stop",
+    "db:status": "node scripts/local-db.mjs status",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run format:check",
+    "db:migrate": "node scripts/local-db.mjs migrate",
+    "db:configure": "node scripts/local-db.mjs configure",
+    "db:test": "node scripts/local-db.mjs test",
+    "test:e2e:local": "THINKINK_LOCAL_AUTH_TESTS=1 playwright test",
+    "db:admin": "node scripts/local-admin.mjs",
+    "release:rollback": "node scripts/rollback.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.20.4",
+    "eslint": "10.11.0",
+    "prettier": "3.9.8",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.70.0",
+    "concurrently": "10.0.5",
+    "supabase": "2.117.0"
+  }
+}

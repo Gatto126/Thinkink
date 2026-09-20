@@ -1,0 +1,24 @@
+begin;
+select plan(12);
+insert into auth.users(id,email,raw_user_meta_data) values
+ ('f3000000-0000-4000-8000-000000000001','catalogue@example.test','{"username":"catalogue_test"}');
+set local role anon;
+select throws_ok($$select * from public.create_topic('Ocean policy')$$,'42501','permission denied for function create_topic','Anonymous creation denied');
+select throws_ok($$insert into public.topics(title) values ('Ocean policy')$$,'42501','permission denied for table topics','Direct anonymous writes denied');
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','f3000000-0000-4000-8000-000000000001',true);
+select is((select title from public.create_topic('  Ocean   policy  ')),'Ocean policy','Title whitespace normalized');
+select is((select count(*)::integer from public.create_topic('OCEAN POLICY')),1,'Duplicate creation resolves successfully');
+select is((select count(*)::integer from public.topics where normalized_key='ocean policy'),1,'Case and spacing share one identity');
+select is((select title from public.create_topic('Ｏｃｅａｎ policy')),'Ocean policy','Unicode compatibility normalized without replacing original title');
+select throws_ok($$select * from public.create_topic(' ')$$,'22023','Invalid topic title','Blank titles rejected');
+select throws_ok($$select * from public.create_topic(repeat('x',161))$$,'22023','Invalid topic title','Long titles rejected');
+select throws_ok($$insert into public.topics(title) values ('Bypass')$$,'42501','permission denied for table topics','Direct authenticated creation denied');
+reset role;
+select is((select created_by from public.topics where normalized_key='ocean policy'),'f3000000-0000-4000-8000-000000000001'::uuid,'Attribution comes from JWT');
+set local role anon;
+select is((select title from public.find_topic(' ocean POLICY ')),'Ocean policy','Public lookup uses canonical identity');
+select throws_ok($$select created_by from public.topics$$,'42501','permission denied for table topics','Author identity remains private');
+select * from finish();
+rollback;
