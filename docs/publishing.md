@@ -1,6 +1,6 @@
 # Publishing the repository
 
-Publishing source code and deploying a running website are separate operations. This scaffold prepares the source repository; it has not created a GitHub remote or deployed cloud services.
+Publishing source code and deploying a running website are separate operations. The source remote is [Gatto126/Thinkink](https://github.com/Gatto126/Thinkink). Cloud services are deployed separately.
 
 ## Included locally
 
@@ -19,7 +19,7 @@ These choices follow [GitHub's repository guidance](https://docs.github.com/en/r
 1. Review the complete set of files and any Git history for credentials, local-only information and data. `.gitignore` does not remove files already committed. Use secret scanning, and rotate any exposed credential instead of only deleting the file.
 2. Verify a fresh `npm ci`, `npm run check`, `npm run build` and `npm run test:e2e`. Keep real provider API calls out of CI. Once schema work begins, add database rebuild and RLS tests on an isolated database.
 3. Confirm the README distinguishes implemented functionality from the roadmap and contains no broken project-specific links or unverified badges.
-4. Create the intended remote repository, configure access and push the reviewed source. No remote owner/name or publication permission is assumed by this scaffold.
+4. Push reviewed commits to the configured `origin` remote. Source publication is separate from deploying Cloudflare or hosted Supabase.
 5. Configure branch protection or a ruleset requiring the CI check on `main`. Configure dependency alerts, secret scanning, push protection, appropriate code scanning and private vulnerability reporting. These are GitHub settings, not features activated by a local Markdown file. Add CODEOWNERS only after actual maintainer accounts are known.
 
 ## License decision
