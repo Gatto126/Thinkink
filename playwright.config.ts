@@ -3,6 +3,11 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
+  // Database-backed suites share one local Worker and Supabase instance in CI.
+  workers:
+    process.env.CI && process.env.THINKINK_LOCAL_AUTH_TESTS === '1'
+      ? 1
+      : undefined,
   use: { baseURL: 'http://127.0.0.1:4173', trace: 'retain-on-failure' },
   projects: [
     {
