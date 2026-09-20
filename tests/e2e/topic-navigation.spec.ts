@@ -51,7 +51,7 @@ test.beforeEach(async ({ page }) => {
   await page.route('https://example.test/image.svg', (r) =>
     r.fulfill({
       contentType: 'image/svg+xml',
-      body: '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="gray"/></svg>',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540"><rect width="960" height="540" fill="gray"/></svg>',
     }),
   );
 });
