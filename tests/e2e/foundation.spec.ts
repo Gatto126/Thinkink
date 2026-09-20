@@ -150,6 +150,9 @@ test('sign-in and invited signup screens are reachable without submitting creden
     'Welcome',
   );
   await page.getByLabel('Email address').fill('preview@example.test');
+  await expect(
+    page.getByLabel('Password', { exact: true }),
+  ).not.toHaveAttribute('minlength');
   await page
     .getByLabel('Password', { exact: true })
     .fill('Preview-only-passphrase');
@@ -177,18 +180,38 @@ test('sign-in and invited signup screens are reachable without submitting creden
     page.getByText('3–30 letters, numbers or underscores.', { exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByText('Use at least 12 characters.', { exact: true }),
-  ).toHaveCount(0);
-  await page.getByLabel('Password', { exact: true }).fill('a');
+    page.getByText('At least 6 characters.', { exact: true }),
+  ).toBeVisible();
+  const signupPassword = page.getByLabel('Password', { exact: true });
+  await expect(signupPassword).toHaveAccessibleDescription(
+    'At least 6 characters.',
+  );
+  await signupPassword.fill('');
+  await signupPassword.pressSequentially('12345');
   expect(
-    await page
-      .getByLabel('Password', { exact: true })
-      .evaluate((input: HTMLInputElement) => input.checkValidity()),
+    await signupPassword.evaluate((input: HTMLInputElement) =>
+      input.checkValidity(),
+    ),
+  ).toBe(false);
+  await signupPassword.press('6');
+  expect(
+    await signupPassword.evaluate((input: HTMLInputElement) =>
+      input.checkValidity(),
+    ),
   ).toBe(true);
   await expect(page).toHaveTitle('Create account — Thinkink');
   // Focusing a lower field can legitimately scroll it into view.
   await expect(page.getByLabel('Username', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Invitation code')).toBeVisible();
+  const invitation = page.getByLabel('Invitation code');
+  await invitation.click();
+  await expect(invitation).toHaveValue('');
+  await invitation.dblclick();
+  await expect(invitation).toHaveValue('');
+  await invitation.click({ clickCount: 3 });
+  await expect(invitation).toHaveValue('Thinkink-beta');
+  await invitation.fill('another-invitation');
+  await expect(invitation).toHaveValue('another-invitation');
   await expect(
     page.getByRole('button', { name: 'Create account' }),
   ).toBeDisabled();

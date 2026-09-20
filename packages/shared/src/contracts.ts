@@ -135,7 +135,7 @@ export const loginSchema = z
   .strict();
 export const signupSchema = loginSchema
   .extend({
-    password: z.string().min(1),
+    password: z.string().min(6, 'Use at least 6 characters for your password.'),
     username: usernameSchema,
     invitation: z.string().min(1).max(200),
   })

@@ -31,8 +31,8 @@ const post = {
 };
 
 describe('authentication boundaries', () => {
-  it('accepts nonempty passwords without application length restrictions', () => {
-    for (const password of ['a', '1234', 'a'.repeat(129)]) {
+  it('requires six characters for signup while preserving shorter-password login', () => {
+    for (const password of ['a', '12345', '123456', 'a'.repeat(129)]) {
       const credentials = { email: 'test@example.test', password };
       expect(loginSchema.safeParse(credentials).success).toBe(true);
       expect(
@@ -41,7 +41,7 @@ describe('authentication boundaries', () => {
           username: 'tester',
           invitation: 'local-code',
         }).success,
-      ).toBe(true);
+      ).toBe(password.length >= 6);
     }
     expect(
       loginSchema.safeParse({ email: 'test@example.test', password: '' })

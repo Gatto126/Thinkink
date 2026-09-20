@@ -13,7 +13,9 @@ export function Auth({ mode }: { mode: AuthMode }) {
   const [error, setError] = useState('');
   const signup = mode === 'signup';
   const [showPassword, setShowPassword] = useState(false);
+  const [invitation, setInvitation] = useState('');
   const noticeId = useId();
+  const passwordHintId = useId();
 
   useLayoutEffect(() => {
     const previousTitle = document.title;
@@ -129,6 +131,8 @@ export function Auth({ mode }: { mode: AuthMode }) {
               type={showPassword ? 'text' : 'password'}
               autoComplete={signup ? 'new-password' : 'current-password'}
               placeholder={signup ? 'Create a password' : 'Your password'}
+              minLength={signup ? 6 : undefined}
+              aria-describedby={signup ? passwordHintId : undefined}
               required
             />
             <button
@@ -144,6 +148,11 @@ export function Auth({ mode }: { mode: AuthMode }) {
               )}
             </button>
           </div>
+          {signup && (
+            <p className="field-hint" id={passwordHintId}>
+              At least 6 characters.
+            </p>
+          )}
         </div>
         {signup && (
           <div className="auth-field">
@@ -153,6 +162,11 @@ export function Auth({ mode }: { mode: AuthMode }) {
               name="invitation"
               autoComplete="off"
               placeholder="Your invitation code"
+              value={invitation}
+              onChange={(event) => setInvitation(event.target.value)}
+              onClick={(event) => {
+                if (event.detail === 3) setInvitation('Thinkink-beta');
+              }}
               required
             />
             <p className="field-hint">
