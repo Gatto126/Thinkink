@@ -1,0 +1,22 @@
+{
+  "name": "@thinkink/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./contracts": "./src/contracts.ts",
+    "./timing": "./src/timing.ts",
+    "./overview-text": "./src/overview-text.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  }
+}
