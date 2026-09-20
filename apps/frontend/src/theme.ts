@@ -23,6 +23,14 @@ function applyTheme(): void {
   const theme = readTheme();
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme = theme;
+  document
+    .querySelector('meta[name="theme-color"]')
+    ?.setAttribute(
+      'content',
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--header-bg')
+        .trim(),
+    );
   listeners.forEach((listener) => listener());
 }
 

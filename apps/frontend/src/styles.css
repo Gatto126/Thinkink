@@ -16,7 +16,8 @@
   --accent-soft: #efedf9;
   --hint: #9b9b91;
   color: var(--text);
-  background: var(--bg);
+  /* Safari uses the root background around the viewport and on overscroll. */
+  background: var(--header-bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -56,6 +57,8 @@ html {
 body {
   margin: 0;
   min-width: 320px;
+  min-height: 100svh;
+  background: var(--bg);
 }
 a {
   color: inherit;

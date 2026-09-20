@@ -13,4 +13,8 @@
   }
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme = theme;
+  // Match --header-bg in styles.css before the stylesheet has loaded.
+  document
+    .querySelector('meta[name="theme-color"]')
+    ?.setAttribute('content', theme === 'dark' ? '#131415' : '#fafafa');
 })();

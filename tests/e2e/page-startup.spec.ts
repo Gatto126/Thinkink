@@ -23,6 +23,10 @@ for (const theme of ['light', 'dark'] as const) {
       try {
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
         await expect(page.locator('html')).toHaveCSS('color-scheme', theme);
+        await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
+          'content',
+          theme === 'dark' ? '#131415' : '#fafafa',
+        );
         await expect(
           page.locator('head script[type="module"]'),
         ).toHaveAttribute('blocking', 'render');
@@ -40,6 +44,25 @@ for (const theme of ['light', 'dark'] as const) {
         }),
       ).toBeVisible();
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      const headerColor =
+        theme === 'dark' ? 'rgb(19, 20, 21)' : 'rgb(250, 250, 250)';
+      await expect(page.locator('html')).toHaveCSS(
+        'background-color',
+        headerColor,
+      );
+      await expect(page.locator('.site-header')).toHaveCSS(
+        'background-color',
+        headerColor,
+      );
+      await page
+        .getByRole('button', {
+          name: `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`,
+        })
+        .click();
+      await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
+        'content',
+        theme === 'dark' ? '#fafafa' : '#131415',
+      );
     });
   }
 }
