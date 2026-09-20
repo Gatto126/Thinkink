@@ -93,6 +93,55 @@ test('header finishes both directions at rest and ignores small scroll reversals
   }
 });
 
+test('settled header stays stable during fast scrolling without rewriting its layout', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    document.body.style.minHeight = '4000px';
+    scrollTo({ top: 160, behavior: 'instant' });
+  });
+  await expect
+    .poll(() =>
+      page
+        .locator('.header-shell')
+        .evaluate((el) => el.style.getPropertyValue('--header-progress')),
+    )
+    .toBe('1.0000');
+  const result = await page.evaluate(async () => {
+    const shell = document.querySelector<HTMLElement>('.header-shell')!;
+    const header = document.querySelector<HTMLElement>('.site-header')!;
+    const main = document.querySelector('main')!;
+    const nextFrame = () => new Promise(requestAnimationFrame);
+    await nextFrame();
+    await nextFrame();
+    let mutations = 0;
+    const observer = new MutationObserver((records) => {
+      mutations += records.length;
+    });
+    observer.observe(shell, { attributes: true });
+    const poses = [];
+    for (const top of [400, 900, 200, 1200, 100]) {
+      scrollTo({ top, behavior: 'instant' });
+      await nextFrame();
+      await nextFrame();
+      poses.push({
+        top: header.getBoundingClientRect().top,
+        height: header.getBoundingClientRect().height,
+        mainTop: main.getBoundingClientRect().top + scrollY,
+      });
+    }
+    observer.disconnect();
+    return { mutations, poses };
+  });
+  expect(result.mutations).toBe(0);
+  for (const pose of result.poses) {
+    expect(pose.top).toBe(0);
+    expect(pose).toEqual(result.poses[0]);
+  }
+});
+
 test('header can reverse mid-transition and reduced motion settles immediately', async ({
   page,
 }) => {

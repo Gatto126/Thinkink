@@ -1464,7 +1464,7 @@ em {
     padding: 22px;
   }
   .home-hero {
-    padding: 83px 0 12px;
+    padding: 40px 0 12px;
     display: block;
   }
   .perspective-art {
@@ -1476,10 +1476,15 @@ em {
     opacity: 0.8;
   }
   .home-art {
+    --letter-travel: 32px;
+    --ring-travel: 16px;
     position: relative;
     left: auto;
     top: auto;
-    margin: -16px auto 64px;
+    margin: -48px auto -16px;
+  }
+  .home-page .topic-sections {
+    gap: 20px;
   }
   .header-search {
     padding: calc(4px * (1 - var(--header-progress)))

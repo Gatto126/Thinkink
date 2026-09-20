@@ -18,13 +18,24 @@ export function attachHeaderMotion(
   let progress = target;
   let from = target;
   let startedAt = 0;
+  let appliedProgress = '';
+  let geometryDirty = true;
+  let pinned: boolean | undefined;
+
+  function setStyle(element: HTMLElement, name: string, value: string) {
+    if (element.style.getPropertyValue(name) !== value)
+      element.style.setProperty(name, value);
+  }
 
   function render(now: number) {
     frame = 0;
     const scrollY = window.scrollY;
     // At the top, mobile CSS puts the header back in document coordinates so
     // native pull-to-refresh carries it with the page, without JS translations.
-    shell.toggleAttribute('data-pinned', scrollY > 0);
+    if (pinned !== scrollY > 0) {
+      pinned = scrollY > 0;
+      shell.toggleAttribute('data-pinned', pinned);
+    }
     if (progress !== target) {
       const elapsed = Math.min(1, (now - startedAt) / duration);
       const eased = 1 - (1 - elapsed) ** 3;
@@ -41,11 +52,19 @@ export function attachHeaderMotion(
       target = nextTarget;
       startedAt = now;
     }
-    if (reducedMotion.matches || scrollY <= 0) progress = target;
+    if (reducedMotion.matches) progress = target;
 
-    shell.style.setProperty('--header-progress', progress.toFixed(4));
-    if (navigation) navigation.inert = progress >= 0.5;
-    if (wordmark && actions && header) {
+    const nextProgress = progress.toFixed(4);
+    const poseChanged = nextProgress !== appliedProgress;
+    if (poseChanged) {
+      appliedProgress = nextProgress;
+      setStyle(shell, '--header-progress', nextProgress);
+      if (navigation && navigation.inert !== progress >= 0.5)
+        navigation.inert = progress >= 0.5;
+    }
+    // Once settled, scrolling must not rewrite styles or force fresh layout.
+    if ((poseChanged || geometryDirty) && wordmark && actions && header) {
+      geometryDirty = false;
       const width = header.clientWidth;
       const feedWidth = parseFloat(
         getComputedStyle(shell).getPropertyValue('--feed-width'),
@@ -64,36 +83,37 @@ export function attachHeaderMotion(
         expandedWidth + (compactWidth - expandedWidth) * progress;
       const expandedLeft = (width - expandedWidth) / 2;
       const searchLeft = expandedLeft + (compactLeft - expandedLeft) * progress;
-      shell.style.setProperty('--header-search-width', `${searchWidth}px`);
-      shell.style.setProperty('--header-search-left', `${searchLeft}px`);
+      setStyle(shell, '--header-search-width', `${searchWidth}px`);
+      setStyle(shell, '--header-search-left', `${searchLeft}px`);
     }
     if (progress !== target) schedule();
   }
   function schedule() {
     if (!frame) frame = requestAnimationFrame(render);
   }
+  function invalidateGeometry() {
+    geometryDirty = true;
+    schedule();
+  }
   const observer = new ResizeObserver(() => {
     const height = header.getBoundingClientRect().height;
-    document.documentElement.style.setProperty(
-      '--header-offset',
-      `${height + 16}px`,
-    );
-    schedule();
+    setStyle(document.documentElement, '--header-offset', `${height + 16}px`);
+    invalidateGeometry();
   });
   observer.observe(header);
   if (wordmark) observer.observe(wordmark);
   if (actions) observer.observe(actions);
   render(performance.now());
   window.addEventListener('scroll', schedule, { passive: true });
-  window.addEventListener('pageshow', schedule);
-  window.addEventListener('resize', schedule);
+  window.addEventListener('pageshow', invalidateGeometry);
+  window.addEventListener('resize', invalidateGeometry);
   reducedMotion.addEventListener('change', schedule);
   return () => {
     cancelAnimationFrame(frame);
     observer.disconnect();
     window.removeEventListener('scroll', schedule);
-    window.removeEventListener('pageshow', schedule);
-    window.removeEventListener('resize', schedule);
+    window.removeEventListener('pageshow', invalidateGeometry);
+    window.removeEventListener('resize', invalidateGeometry);
     reducedMotion.removeEventListener('change', schedule);
     shell.style.removeProperty('--header-progress');
     shell.style.removeProperty('--header-search-width');
