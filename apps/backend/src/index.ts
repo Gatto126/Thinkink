@@ -1,4 +1,6 @@
 import { handleSocial } from './social/routes';
+import { handleTopicSocket } from './discussion/realtime';
+export { TopicRoom } from './discussion/room';
 import { handleNotifications } from './notifications/routes';
 import { handleComments } from './discussion/routes';
 import { handleVisit } from './discussion/visits';
@@ -20,6 +22,8 @@ export function handleRequest(
   env: AuthEnv = {},
 ): Response | Promise<Response> {
   const { pathname } = new URL(request.url);
+  const socket = /^\/api\/topics\/([^/]+)\/live$/.exec(pathname);
+  if (socket) return handleTopicSocket(request, env, socket[1]!);
   if (
     pathname === '/api/favorites' ||
     /^\/api\/topics\/[^/]+\/social$/.test(pathname) ||

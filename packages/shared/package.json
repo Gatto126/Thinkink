@@ -6,6 +6,7 @@
   "sideEffects": false,
   "exports": {
     "./contracts": "./src/contracts.ts",
+    "./realtime": "./src/realtime.ts",
     "./timing": "./src/timing.ts",
     "./overview-text": "./src/overview-text.ts"
   },

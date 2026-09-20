@@ -8,6 +8,7 @@ import { authenticate, AuthFailure, body } from '../auth/request';
 import { configured, isLoopback, sameOrigin } from '../auth/config';
 import type { AuthEnv } from '../auth/config';
 import { supabase } from '../auth/supabase';
+import { commentRoomTopic, notifyTopicRoom } from '../discussion/realtime';
 
 export async function handleSocial(request: Request, env: AuthEnv) {
   const headers = new Headers({
@@ -108,6 +109,8 @@ export async function handleSocial(request: Request, env: AuthEnv) {
       );
       return reply(favoriteListSchema.parse({ ...result.data, items }));
     }
+    if (comment)
+      await notifyTopicRoom(env, await commentRoomTopic(env, id!.data!));
     return reply(
       (topic ? topicSocialSchema : reactionSchema).parse(result.data),
     );

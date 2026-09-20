@@ -11,6 +11,7 @@
     "types": "node -e \"require('node:fs').mkdirSync('.generated', {recursive: true})\" && wrangler types .generated/worker.d.ts",
     "typecheck": "npm run types && tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "test": "vitest run",
+    "test:rooms": "vitest run --config vitest.rooms.config.ts",
     "lint": "eslint ."
   },
   "dependencies": {
@@ -21,6 +22,7 @@
   },
   "devDependencies": {
     "@types/node": "22.20.4",
+    "miniflare": "5.20260918.0-alpha",
     "typescript": "6.0.3",
     "vitest": "5.0.1",
     "wrangler": "4.135.0"
