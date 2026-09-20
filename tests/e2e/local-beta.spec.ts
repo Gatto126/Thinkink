@@ -105,10 +105,12 @@ test('beta quota, comments and daily visit deduplication work against the local 
           })
         ).status(),
       ).toBe(204);
-    const home = await (await request.get('/api/home')).json();
-    expect(
-      home.mostVisited.find((v: { id: string }) => v.id === ids[0])?.visits,
-    ).toBe(1);
+    // Existing local topics can outrank this fixture in the top-three list.
+    // Read this topic directly to verify daily visit deduplication in isolation.
+    const activity = await (
+      await request.get(`/api/topics/${ids[0]}/social`)
+    ).json();
+    expect(activity.visits).toBe(1);
     await page.getByLabel(`Comment options by beta_${suffix}`).first().click();
     await page
       .getByRole('button', { name: `Delete comment by beta_${suffix}` })

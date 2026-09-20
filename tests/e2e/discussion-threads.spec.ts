@@ -390,7 +390,7 @@ test('home cards place visit and comment icons beside the title in both lists', 
     r.fulfill({ json: { user: null, available: true, localSignup: false } }),
   );
   await page.goto('/');
-  const cards = page.locator('.topic-list a');
+  const cards = page.getByRole('link', { name: item.title, exact: true });
   await expect(cards).toHaveCount(2);
   for (const card of await cards.all()) {
     await expect(
