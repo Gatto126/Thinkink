@@ -68,11 +68,13 @@ export function Header({
                   Explore
                 </Link>
               )}
-              {pathname !== '/mission/' && pathname !== '/mission' && (
-                <a href="/mission/" className="nav-link">
-                  Mission
-                </a>
-              )}
+              {pathname !== '/mission/' &&
+                pathname !== '/mission' &&
+                !pathname.startsWith('/topics/') && (
+                  <a href="/mission/" className="nav-link">
+                    Mission
+                  </a>
+                )}
             </nav>
           </div>
           <div className="header-actions">

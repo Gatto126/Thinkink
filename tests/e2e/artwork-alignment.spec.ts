@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('Explore and Mission keep the same artwork coordinates and scroll pose at every breakpoint', async ({
+test('Explore and Mission share desktop artwork and keep mobile Explore artwork beside its heading', async ({
   page,
 }) => {
   await page.route('**/api/home', (route) =>
@@ -71,10 +71,33 @@ test('Explore and Mission keep the same artwork coordinates and scroll pose at e
       }
       pages.push(poses);
     }
-    expect(
-      pages[1],
-      `artwork remains anchored at viewport width ${width}`,
-    ).toEqual(pages[0]);
+    if (width > 700) {
+      expect(
+        pages[1],
+        `artwork remains anchored at viewport width ${width}`,
+      ).toEqual(pages[0]);
+    } else {
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      const layout = await page.evaluate(() => {
+        const box = (selector: string) =>
+          document.querySelector(selector)!.getBoundingClientRect();
+        const heading = box('h1');
+        const art = box('.home-art');
+        const letter = box('.home-art .art-center');
+        const catalogue = box('.catalogue');
+        return {
+          gap: art.top - heading.bottom,
+          letterGap: letter.top - heading.bottom,
+          artBottom: art.bottom,
+          catalogueTop: catalogue.top,
+        };
+      });
+      expect(layout.gap).toBeGreaterThanOrEqual(0);
+      expect(layout.gap).toBeLessThan(24);
+      expect(layout.letterGap).toBeLessThan(100);
+      expect(layout.artBottom).toBeLessThan(layout.catalogueTop);
+    }
     expect(headings[1], `matching hero title style at ${width}px`).toEqual(
       headings[0],
     );

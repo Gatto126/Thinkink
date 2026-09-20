@@ -1208,8 +1208,8 @@ em {
   z-index: 1;
   margin-top: 55px;
 }
-/* Both hero containers are centered: anchor the artwork to that shared center,
-   never to their different text widths. Keep all placement rules here. */
+/* Desktop heroes share an artwork anchor; mobile Explore places it in flow
+   beneath its shorter heading so topic cards cannot cover it. */
 .perspective-art {
   position: absolute;
   left: calc(50% + 239px);
@@ -1464,6 +1464,12 @@ em {
     left: calc(50% - 120px);
     top: 415px;
     opacity: 0.8;
+  }
+  .home-art {
+    position: relative;
+    left: auto;
+    top: auto;
+    margin: -16px auto 64px;
   }
   .header-search {
     padding: calc(4px * (1 - var(--header-progress)))

@@ -196,7 +196,7 @@ test('every section shares search dimensions and scroll compaction', async ({
     ).toHaveCount(path === '/' ? 0 : 1);
     await expect(
       nav.getByRole('link', { name: 'Mission', exact: true }),
-    ).toHaveCount(path === '/mission/' ? 0 : 1);
+    ).toHaveCount(path === '/mission/' || path.startsWith('/topics/') ? 0 : 1);
     await page.evaluate(() => scrollTo({ top: 160, behavior: 'instant' }));
     await expect
       .poll(() =>
