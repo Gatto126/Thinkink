@@ -19,11 +19,25 @@ export function supabase(
         headers: options.token
           ? { Authorization: `Bearer ${options.token}` }
           : {},
-        fetch: (input, init) =>
-          fetch(input, {
-            ...init,
-            signal: init?.signal ?? AbortSignal.timeout(10000),
-          }),
+        fetch: async (input, init) => {
+          if (init?.signal) return fetch(input, init);
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 10000);
+          try {
+            const response = await fetch(input, {
+              ...init,
+              signal: controller.signal,
+            });
+            // Supabase endpoints return finite JSON, not streams. Keep the
+            // deadline through body consumption, then release its timer.
+            const payload = response.body ? await response.arrayBuffer() : null;
+            return new Response(payload, response);
+          } finally {
+            // An outstanding timeout prevents a room from hibernating, even
+            // after its database request has finished.
+            clearTimeout(timer);
+          }
+        },
       },
     },
   );

@@ -27,6 +27,7 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run build
+      - run: npm run test:rooms
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
 
@@ -48,6 +49,6 @@ jobs:
       - run: npm run db:test
       - run: npm run build
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e:local -- local-auth.spec.ts local-catalogue.spec.ts local-moderation.spec.ts local-beta.spec.ts
+      - run: npm run test:e2e:local -- local-auth.spec.ts local-catalogue.spec.ts local-moderation.spec.ts local-beta.spec.ts local-realtime.spec.ts
       - if: always()
         run: npm run db:stop

@@ -19,6 +19,7 @@ import type { CommentList } from '@thinkink/shared/contracts';
 import { readApi } from '../api';
 import { useSession } from '../auth/session';
 import { AuthPrompt } from './AuthPrompt';
+import { TopicRoom, useTopicRoom } from './TopicRoom';
 
 type Comment = CommentList['items'][number];
 const emptyPage: CommentList = { items: [], hasMore: false, total: 0 };
@@ -59,6 +60,7 @@ function useComments(
   threadId?: string,
 ) {
   const session = useSession();
+  const room = useTopicRoom();
   const [data, setData] = useState<CommentList>(emptyPage);
   const pageKey = `${commentsPath(topicId, offset, threadId)}:${session.user?.id ?? 'anonymous'}`;
   const [loadedKey, setLoadedKey] = useState('');
@@ -69,6 +71,7 @@ function useComments(
     if (!enabled) return;
     let disposed = false;
     let running = false;
+    let failed = false;
     const controller = new AbortController();
     setLoading(true);
     async function load() {
@@ -81,11 +84,13 @@ function useComments(
           controller.signal,
         );
         if (!disposed) {
+          failed = false;
           setData(value);
           setLoadedKey(pageKey);
           setError('');
         }
       } catch (error) {
+        failed = true;
         if (!disposed)
           setError(
             error instanceof Error
@@ -98,7 +103,9 @@ function useComments(
       }
     }
     void load();
-    const timer = setInterval(() => void load(), 10000);
+    const timer = setInterval(() => {
+      if (!room.connected || failed) void load();
+    }, 10000);
     const visibility = () => {
       if (!document.hidden) void load();
     };
@@ -118,6 +125,8 @@ function useComments(
     threadId,
     attempt,
     pageKey,
+    room.connected,
+    room.revision,
   ]);
   return {
     data: loadedKey === pageKey ? data : emptyPage,
@@ -754,7 +763,19 @@ function CommentThread({
   );
 }
 
-export function Discussion({
+export function Discussion(props: {
+  topicId: string;
+  initialTotal?: number;
+  onTotalChange?: (total: number) => void;
+}) {
+  return (
+    <TopicRoom topicId={props.topicId}>
+      <DiscussionFeed {...props} />
+    </TopicRoom>
+  );
+}
+
+function DiscussionFeed({
   initialTotal,
   topicId,
   onTotalChange,
@@ -764,6 +785,7 @@ export function Discussion({
   onTotalChange?: (total: number) => void;
 }) {
   const session = useSession();
+  const room = useTopicRoom();
   const location = useLocation();
   const section = useRef<HTMLElement>(null);
   const [destination, setDestination] = useState<
@@ -864,6 +886,17 @@ export function Discussion({
     >
       <div className="block-label">
         <h2 id="discussion-heading">Comments</h2>
+        <span
+          className="field-hint"
+          title="Signed-in readers; multiple tabs count once."
+          data-live-state={room.connected ? 'connected' : 'offline'}
+        >
+          {room.deleted
+            ? 'Topic deleted'
+            : room.connected
+              ? `Live · ${room.readers} ${room.readers === 1 ? 'reader' : 'readers'}`
+              : 'Connecting…'}
+        </span>
         <span className="comment-count">
           <MessageCircle size={16} aria-hidden="true" />
           {feed.loaded ? feed.data.total : (initialTotal ?? '—')}
@@ -923,7 +956,9 @@ export function Discussion({
           </button>
         </nav>
       )}
-      {session.user ? (
+      {room.deleted ? (
+        <p role="alert">This topic has been deleted.</p>
+      ) : session.user ? (
         <CommentComposer
           topicId={topicId}
           onPosted={() => {

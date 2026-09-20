@@ -1,0 +1,33 @@
+begin;
+select plan(12);
+insert into auth.users(id,email,raw_user_meta_data) values
+ ('f9000000-0000-4000-8000-000000000003','roomfixture@example.test','{"username":"roomfixture"}');
+insert into public.topics(id,title,created_by) values
+ ('f9000000-0000-4000-8000-000000000001','roomfixture topic','f9000000-0000-4000-8000-000000000003');
+select is(public.topic_room_state('f9000000-0000-4000-8000-000000000001')->>'revision','0','New room starts at zero');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','f9000000-0000-4000-8000-000000000003',true);
+select public.add_comment('f9000000-0000-4000-8000-000000000001','f9000000-0000-4000-8000-000000000004','Saved message');
+select is(public.topic_room_state('f9000000-0000-4000-8000-000000000001')->>'revision','1','Insert advances cursor');
+select public.add_comment('f9000000-0000-4000-8000-000000000001','f9000000-0000-4000-8000-000000000004','Saved message');
+select is(public.topic_room_state('f9000000-0000-4000-8000-000000000001')->>'revision','1','Idempotent retry does not create an event');
+select public.set_comment_like('f9000000-0000-4000-8000-000000000004',true);
+select is(public.topic_room_state('f9000000-0000-4000-8000-000000000001')->>'revision','2','Like advances cursor');
+select public.set_comment_like('f9000000-0000-4000-8000-000000000004',true);
+select is(public.topic_room_state('f9000000-0000-4000-8000-000000000001')->>'revision','2','Duplicate like does not advance cursor');
+select public.set_comment_like('f9000000-0000-4000-8000-000000000004',false);
+select is(public.topic_room_state('f9000000-0000-4000-8000-000000000001')->>'revision','3','Unlike advances cursor');
+savepoint before_delete;
+select public.delete_own_comment('f9000000-0000-4000-8000-000000000004');
+select is(public.topic_room_state('f9000000-0000-4000-8000-000000000001')->>'revision','4','Deletion advances cursor');
+rollback to before_delete;
+select is(public.topic_room_state('f9000000-0000-4000-8000-000000000001')->>'revision','3','Rolled-back writes roll back delivery state');
+set local role anon;
+select is(public.comment_room_topic('f9000000-0000-4000-8000-000000000004')::text,'f9000000-0000-4000-8000-000000000001','Public comment maps to its public topic');
+select is((select count(*)::int from jsonb_object_keys(public.topic_room_state('f9000000-0000-4000-8000-000000000001'))),2,'State contains only existence and revision');
+select throws_ok($$update public.topics set discussion_revision=100 where id='f9000000-0000-4000-8000-000000000001'$$,'42501',null,'Anonymous clients cannot forge revisions');
+reset role;
+delete from public.topics where id='f9000000-0000-4000-8000-000000000001';
+select is(public.topic_room_state('f9000000-0000-4000-8000-000000000001')->>'exists','false','Deleted topic has no room');
+select * from finish();
+rollback;

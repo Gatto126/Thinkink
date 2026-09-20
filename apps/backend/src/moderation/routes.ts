@@ -5,6 +5,7 @@ import type { AuthEnv } from '../auth/config';
 import { authenticate, AuthFailure, body } from '../auth/request';
 import { supabase } from '../auth/supabase';
 import { providersEnabled } from '../content/service';
+import { commentRoomTopic, notifyTopicRoom } from '../discussion/realtime';
 
 export async function handleModeration(
   request: Request,
@@ -81,6 +82,7 @@ export async function handleModeration(
       );
     const client = supabase(env, { token: identity.token });
     let result;
+    let changedTopic: string | null = null;
     if (overview) {
       const id = z.uuid().safeParse(overview[1]);
       const input = editOverviewSchema.safeParse(await body(request, 262144));
@@ -201,6 +203,11 @@ export async function handleModeration(
           'CONFIRMATION_REQUIRED',
           'Confirm permanent deletion.',
         );
+      changedTopic = comment
+        ? await commentRoomTopic(env, id.data)
+        : topic && !permissions
+          ? id.data
+          : null;
       result = permissions
         ? await client.rpc('can_delete_topic', { topic_input: id.data })
         : topic
@@ -233,6 +240,7 @@ export async function handleModeration(
     if (budget)
       return reply({ ...result.data, enabled: providersEnabled(env) });
     if (listing || owned) return reply(result.data);
+    await notifyTopicRoom(env, changedTopic);
     return reply(
       permissions ? { canDelete: result.data === true } : { deleted: true },
     );

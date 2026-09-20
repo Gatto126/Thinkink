@@ -9,6 +9,7 @@ import { configured, isLoopback, sameOrigin } from '../auth/config';
 import type { AuthEnv } from '../auth/config';
 import { authenticate, AuthFailure, body } from '../auth/request';
 import { supabase } from '../auth/supabase';
+import { commentRoomTopic, notifyTopicRoom } from './realtime';
 
 export async function handleComments(
   request: Request,
@@ -94,10 +95,12 @@ export async function handleComments(
           'CONFIRMATION_REQUIRED',
           'Confirm comment deletion.',
         );
+      const topicId = await commentRoomTopic(env, id.data);
       const result = await client.rpc('delete_own_comment', {
         comment_input: id.data,
       });
       check(result.error);
+      await notifyTopicRoom(env, topicId);
       return reply({ deleted: true });
     }
     if (request.method === 'POST') {
@@ -115,6 +118,7 @@ export async function handleComments(
         parent_input: input.data.parentId,
       });
       check(result.error);
+      await notifyTopicRoom(env, id.data);
       return reply({ id: result.data }, 201);
     }
     if (url.searchParams.has('locate')) {
