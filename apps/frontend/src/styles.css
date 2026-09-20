@@ -1406,6 +1406,16 @@ em {
   }
 }
 @media (max-width: 700px) {
+  .header-shell {
+    position: relative;
+    z-index: 40;
+  }
+  .site-header {
+    position: absolute;
+  }
+  .header-shell[data-pinned] > .site-header {
+    position: fixed;
+  }
   .header-shell--search {
     --header-search-space: 88px;
   }

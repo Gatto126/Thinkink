@@ -95,6 +95,18 @@ test('fixed header completes compaction after scrolling stops without moving con
     .toBe(expanded.header.height);
   expect(await page.evaluate(() => scrollY)).toBe(32);
   await expect(page.locator('.header-inner nav')).toBeVisible();
+  await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+  await expect(page.locator('.header-shell')).not.toHaveAttribute(
+    'data-pinned',
+  );
+  await expect(page.locator('.site-header')).toHaveCSS(
+    'position',
+    page.viewportSize()!.width <= 700 ? 'absolute' : 'fixed',
+  );
+  await expect
+    .poll(async () => (await measure()).header.height)
+    .toBe(expanded.header.height);
+  expect((await measure()).mainTop).toBe(expanded.mainTop);
   await page.getByRole('link', { name: 'Mission', exact: true }).click();
   await expect(
     page

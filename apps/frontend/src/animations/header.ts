@@ -1,5 +1,5 @@
-// Shared by the React app and the static Mission page. The fixed header can
-// shrink without changing the spacer or feeding layout changes back into scroll.
+// Shared by the React app and the static Mission page. The stable spacer keeps
+// compaction from moving content; mobile headers follow native overscroll at top.
 export function attachHeaderMotion(
   shell: HTMLElement,
   animate = true,
@@ -21,6 +21,10 @@ export function attachHeaderMotion(
 
   function render(now: number) {
     frame = 0;
+    const scrollY = window.scrollY;
+    // At the top, mobile CSS puts the header back in document coordinates so
+    // native pull-to-refresh carries it with the page, without JS translations.
+    shell.toggleAttribute('data-pinned', scrollY > 0);
     if (progress !== target) {
       const elapsed = Math.min(1, (now - startedAt) / duration);
       const eased = 1 - (1 - elapsed) ** 3;
@@ -29,7 +33,7 @@ export function attachHeaderMotion(
 
     // Scroll selects a destination, never an intermediate layout. Different
     // thresholds prevent trackpad jitter from repeatedly reversing the motion.
-    const distance = animate ? Math.max(0, window.scrollY) : 0;
+    const distance = animate ? Math.max(0, scrollY) : 0;
     const nextTarget =
       distance >= collapseAt ? 1 : distance <= expandAt ? 0 : target;
     if (nextTarget !== target) {
@@ -37,7 +41,7 @@ export function attachHeaderMotion(
       target = nextTarget;
       startedAt = now;
     }
-    if (reducedMotion.matches) progress = target;
+    if (reducedMotion.matches || scrollY <= 0) progress = target;
 
     shell.style.setProperty('--header-progress', progress.toFixed(4));
     if (navigation) navigation.inert = progress >= 0.5;
@@ -80,7 +84,7 @@ export function attachHeaderMotion(
   if (wordmark) observer.observe(wordmark);
   if (actions) observer.observe(actions);
   render(performance.now());
-  if (animate) window.addEventListener('scroll', schedule, { passive: true });
+  window.addEventListener('scroll', schedule, { passive: true });
   window.addEventListener('pageshow', schedule);
   window.addEventListener('resize', schedule);
   reducedMotion.addEventListener('change', schedule);
@@ -94,6 +98,7 @@ export function attachHeaderMotion(
     shell.style.removeProperty('--header-progress');
     shell.style.removeProperty('--header-search-width');
     shell.style.removeProperty('--header-search-left');
+    shell.removeAttribute('data-pinned');
     if (navigation) navigation.inert = false;
     document.documentElement.style.removeProperty('--header-offset');
   };
