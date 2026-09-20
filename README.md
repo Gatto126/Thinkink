@@ -10,7 +10,7 @@ The React frontend, Cloudflare Worker, static Mission page and local Supabase ac
 
 The persistent topic catalogue supports live partial-title suggestions, public reading, authenticated creation, canonical title deduplication, and Latest topics. The topic page uses a centered card feed with the shared search header, themes and vertical reveal motion. Creation prepares up to six real Serper news results and a free OpenRouter overview with linked, frozen sources. Content persists across reloads without further provider requests; failures preserve available articles. Atomic spending caps, one bounded free fallback, explicit retries and a moderator pause control protect the demo budget. See [provider setup and consumption](docs/content-providers.md).
 
-Account settings list the user’s own topic cards with confirmed deletion, including associated comments. A role-protected moderation dashboard manages topics, comments and registered users. Admin user deletion removes the account, all its topics (including other users’ comments on those topics) and its comments elsewhere in one transaction. Self-service account deletion retains anonymized shared topics and comments. Persistent comments, replies and daily-deduplicated view counting are implemented; Durable Object scheduling remains deferred; there are no fabricated articles, summaries, history entries or popularity rankings.
+Account settings list the user’s own topic cards with confirmed deletion, including associated comments. A role-protected moderation dashboard manages topics, comments and registered users. Admin user deletion removes the account, all its topics (including other users’ comments on those topics) and its comments elsewhere in one transaction. Self-service account deletion retains anonymized shared topics and comments. Persistent comments, replies and daily-deduplicated view counting are implemented; Durable Object rooms deliver discussion updates over hibernating WebSockets; automatic provider scheduling remains deferred; there are no fabricated articles, summaries, history entries or popularity rankings.
 
 ## Local development
 
@@ -30,6 +30,7 @@ Open `http://127.0.0.1:5173`. This command builds the initial static assets, gen
 ```sh
 npm run check
 npm run build
+npm run test:rooms
 npm run test:e2e
 npm run preview
 ```
@@ -39,8 +40,9 @@ The browser tests use the installed Google Chrome browser locally and Playwright
 ## Next milestone
 
 1. Verify the invited HTTPS beta flow in hosted staging; see [beta release and rollback](docs/beta-release.md).
-2. Evaluate the consumption budget before adding the per-topic Durable Object and its two independent refresh clocks.
-3. Prepare remote staging and deployment/recovery checks.
+2. Verify topic rooms, reconnect recovery and authenticated presence in hosted staging; see [live discussion](docs/realtime.md).
+3. Evaluate the consumption budget before implementing automatic news/AI refresh clocks.
+4. Prepare deployment/recovery checks.
 
 Docker is required for local accounts. The remaining UI can run without a database, with account controls unavailable. `db:configure` writes local credentials to ignored `apps/backend/.dev.vars`; it refuses to overwrite a hosted Supabase URL. The default local invitation is `thinkink-local`. Use synthetic accounts through `/signup` and inspect Auth users and `public.profiles` in Studio at `http://127.0.0.1:54323`. No emails are sent by the local test flow or the explicitly enabled invited beta flow.
 
@@ -58,7 +60,7 @@ See [curated avatars and account deletion](docs/avatar-catalog.md) for catalogue
 | Comments    | Persist before acknowledgement and WebSocket distribution                  |
 | Mission     | Static HTML with progressive, optional browser animations                  |
 
-These are planned timing policies. Initial topic preparation is implemented; periodic provider refresh remains disabled to conserve the demo budget. Preparation claims and budget reservations use tested database row locks. Room alarms and WebSockets still require implementation and integration tests.
+These are planned timing policies. Initial topic preparation is implemented; periodic provider refresh remains disabled to conserve the demo budget. Preparation claims and budget reservations use tested database row locks. Room recovery alarms and WebSockets are implemented and covered by runtime tests; those alarms only recover discussion changes and reader leases. They never initiate provider refreshes.
 
 ## Repository map
 
@@ -91,4 +93,4 @@ No cloud resources or deployments are created by the development or test command
 
 ## Publication and license
 
-The project is a work in progress. Repository preparation and remaining GitHub settings are documented in [publishing the repository](docs/publishing.md). The license decision is deferred; no project LICENSE file has been added. Package manifests use `private: true` to prevent accidental npm publication; this does not determine GitHub repository visibility.
+The project is a work in progress. The source repository is [Gatto126/Thinkink](https://github.com/Gatto126/Thinkink). Repository preparation and remaining GitHub settings are documented in [publishing the repository](docs/publishing.md). The license decision is deferred; no project LICENSE file has been added. Package manifests use `private: true` to prevent accidental npm publication; this does not determine GitHub repository visibility.

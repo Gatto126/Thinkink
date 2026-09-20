@@ -1,6 +1,6 @@
 # Initial topic preparation and demo consumption
 
-Creating an authenticated topic prepares its news and overview before the successful creation response. An identical existing title reuses its saved result. Other readers of an in-progress topic poll saved state only; HTTP reads, Home, live topic suggestions, page reloads and returning readers never initiate provider calls. Periodic refresh and discussion are deliberately outside this milestone.
+Creating an authenticated topic prepares its news and overview before the successful creation response. An identical existing title reuses its saved result. Other readers of an in-progress topic poll saved state only; HTTP reads, Home, live topic suggestions, page reloads and returning readers never initiate provider calls. Periodic provider refresh remains deferred. Live discussion uses its own Durable Object rooms and never calls these providers.
 
 ## Configuration
 
@@ -37,17 +37,9 @@ For a real smoke test, use one meaningful topic and inspect the attempt counters
 
 Free-model availability and account-wide usage elsewhere are outside this application's control. A newly created topic can therefore be partial during a provider outage, while an already completed topic stays readable from the database. Remote staging, periodic refresh coordination and live discussion remain separate work.
 
-### Local smoke result (20 September 2026)
+### Local provider validation
 
-The saved **Space exploration** topic (`5007e8a1-4072-4bae-9c3f-4a9b765750ec`) contains six real articles and a three-paragraph overview with source links. One actual Serper search and two OpenRouter inference attempts were made: Gemma returned 429; Nemotron completed the overview. OpenRouter subsequently reported usage **0**, with **1 of 50** daily free requests used and **49 remaining**. Desktop/mobile reload checks left the attempt ledger unchanged.
-
-The app ledger conservatively records two Serper reservations: the first failed locally because Workerd rejected `redirect: 'error'` before dispatch; the transport now uses `manual` and rejects redirects without forwarding credentials. That reservation was not refunded. After diagnosing the 429 and verifying the untouched account allowance in read-only metadata, the same claim was resumed once for its remaining free fallback slot, retaining both topic-attempt and provider-attempt counts. This was a one-off local smoke recovery, not an API for bypassing limits. No further metered test calls were made.
-
-Official references checked on 20 September 2026: [OpenRouter limits](https://openrouter.ai/docs/api_reference/limits), [provider price constraints](https://openrouter.ai/docs/guides/routing/provider-selection#max-price), [Serper trial and news response examples](https://serper.dev/). Serper advertises 2,500 free trial queries; this is not treated as a replenishing monthly allowance. OpenRouter limits apply across API keys on the same account.
-
-### Follow-up recovery
-
-The user-created **War in iran** topic (`f6dd32da-58a2-4e94-96b5-258c780560f1`) initially received an incomplete Nemotron response followed by Gemma's 429. After correcting the generic 24-hour rate-limit pause and selecting Nex Mini with supported reasoning effort `none`, one ordinary API retry after the cooldown completed the overview. It reused all six saved articles, made one additional AI call and did not reset any counters or claims. The resulting paragraphs and linked citations were checked against the saved source excerpts. Reads still leave attempt counts unchanged; the key metadata continued to report zero spending. Provider counters can lag and are not used to refund local attempt reservations.
+Local smoke checks have produced persisted articles and summaries with linked sources. Reloads reuse the stored content without increasing the provider attempt ledger. Transient model failures preserve the articles and use only the bounded explicit retry policy. Provider counters can lag and are never used to refund local reservations. Local database identifiers and individual smoke-test recovery history are intentionally omitted from the published repository documentation.
 
 Topic loading retains the card position and reserves the image frame even when a thumbnail fails. Repeated content/image entrance fades have been removed. Public Home data and up to twelve topic snapshots are cached in session storage for up to thirty minutes, including across the static Mission page; background reads revalidate them without clearing visible content. A 404 evicts the topic, and local topic deletion also removes cached Home entries. Link hover/focus can prefetch stored topic content; these GET requests never generate content. Offscreen scroll reveals still use the shared reduced-motion-aware implementation. Browser tests cover navigation through Home/Mission, delayed revalidation, cache eviction, failed images, attribution/dates, desktop/mobile layout and the retry button becoming available after a cooldown without automatically requesting inference.
 

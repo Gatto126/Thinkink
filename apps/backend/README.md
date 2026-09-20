@@ -1,8 +1,9 @@
 # Backend
 
-`@thinkink/backend` owns the Cloudflare Worker, server-side domain logic and backend tests. Authentication and profile persistence are implemented here; future Durable Objects and news/AI adapters belong here. Database configuration, migrations and SQL tests are maintained separately in the root `supabase/` directory.
+`@thinkink/backend` owns the Cloudflare Worker, server-side domain logic and backend tests. Authentication and profile persistence are implemented here; TopicRoom Durable Objects and news/AI adapters also live here. Database configuration, migrations and SQL tests are maintained separately in the root `supabase/` directory.
 
 - `src/index.ts`: the Worker request entry point.
+- `src/discussion/`: persistent comment routes, authenticated WebSocket upgrades and per-topic rooms.
 - `src/auth/`: cookie sessions, request validation, Supabase adapter and account routes.
 - `src/domain/`: server-side domain policies, including refresh eligibility.
 - `tests/unit/`: backend unit tests.
@@ -27,3 +28,5 @@ After a full `npm run build`, root `npm run preview` serves the compiled Worker 
 Use root `npm run db:start`, `db:status`, and `db:stop` to manage the separate Supabase project. The project ID remains `thinkink`, preserving the existing local Docker database. See [local setup](../../docs/local-setup.md) for Docker Desktop paths.
 
 Local secrets belong in `apps/backend/.dev.vars`, next to Wrangler configuration. Backend TypeScript uses generated Cloudflare runtime types rather than browser DOM or implicit Node globals. `npm run types --workspace @thinkink/backend` refreshes those types when bindings change; type checking also regenerates them.
+
+After `npm run build`, run `npm run test:rooms` from the repository root to exercise the actual Cloudflare runtime, including hibernation, room isolation and recovery alarms. See [live discussion](../../docs/realtime.md).
