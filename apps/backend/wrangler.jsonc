@@ -3,7 +3,9 @@
   "name": "thinkink",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-20",
-  "workers_dev": false,
+  "workers_dev": true,
+  "keep_vars": true,
+  "observability": { "enabled": true },
   "preview_urls": false,
   "durable_objects": {
     "bindings": [{ "name": "TOPIC_ROOMS", "class_name": "TopicRoom" }],
