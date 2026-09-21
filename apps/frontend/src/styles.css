@@ -2979,14 +2979,18 @@ em {
 .topic-list > li {
   position: relative;
 }
-.topic-list .topic-stats {
-  padding-right: 38px;
+.topic-list .topic-list-heading {
+  padding-left: 38px;
 }
 .topic-card-favorite {
   position: absolute;
-  top: 26px;
-  right: 24px;
+  top: 29px;
+  left: 28px;
   z-index: 1;
+}
+.topic-card-favorite .topic-action-error {
+  left: 0;
+  right: auto;
 }
 .topic-card-favorite .favorite-toggle {
   display: inline-flex;
@@ -2997,7 +3001,7 @@ em {
 }
 @media (max-width: 700px) {
   .topic-card-favorite {
-    top: 21px;
-    right: 16px;
+    top: 24px;
+    left: 20px;
   }
 }
