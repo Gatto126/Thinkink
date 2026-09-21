@@ -51,7 +51,7 @@ The `.dev.vars` file belongs in `apps/backend/`, next to `wrangler.jsonc`. Use `
 
 ## Hosted services
 
-Cloudflare and hosted Supabase projects are needed for staging, after the local flow is verified. The initial milestone does not deploy or enable a public preview.
+The beta runs on Cloudflare at [thinkink.ansaldi-graphic.workers.dev](https://thinkink.ansaldi-graphic.workers.dev/) with a hosted Supabase project. Development and test commands use only local services. A separate staging environment is not configured yet.
 
 ## First complete user journey
 

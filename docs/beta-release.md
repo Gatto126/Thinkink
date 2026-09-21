@@ -36,7 +36,7 @@ Keep additive migrations and newly created user content in place. These beta mig
 
 ## Deferred by product decision
 
-Contact/reporting pages and image reuse review are outside this beta implementation. Hosted staging, domain, actual cloud secrets, first deployment and a real remote rollback rehearsal still require the target infrastructure. Local implementation does not mean the site is already published.
+Contact/reporting pages and image reuse review are outside this beta implementation. The beta Worker is deployed on its workers.dev route, [thinkink.ansaldi-graphic.workers.dev](https://thinkink.ansaldi-graphic.workers.dev/), with a hosted Supabase database and its secrets configured on the Worker. A separate staging environment, a custom domain and a real remote rollback rehearsal are still open.
 
 Comment likes and topic favorites are persisted per authenticated account. Hearts display a public count and the caller's selected state on roots and replies. PUT writes set an explicit boolean and are idempotent; duplicate requests never add another like. Favorites are private, paged in groups of 20, and reachable through the star in the avatar menu. Removing a topic, comment or account cascades to the relevant saved selections. Favorite stars are available on home and favorites cards as well as topic pages; same-topic instances synchronize immediately after successful writes. Neither selected states nor favorite lists enter the public content cache. Unauthenticated readers can see counts and are directed to sign in to select a heart or star.
 

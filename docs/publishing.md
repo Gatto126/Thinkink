@@ -30,4 +30,4 @@ The owner has deferred choosing a license. No project LICENSE file is included, 
 
 ## Website publication
 
-Cloudflare and hosted Supabase will have separate local, staging and production configuration. Before deploying the application, complete the functional milestones, verify account limits and provider terms, configure secrets outside Git and test deployment plus schema recovery in staging. Repository readiness is not a claim that the current application is production-ready.
+The beta is deployed as one Cloudflare Worker at [thinkink.ansaldi-graphic.workers.dev](https://thinkink.ansaldi-graphic.workers.dev/), backed by a hosted Supabase project. Keep local, staging and production configuration separate. Before a wider release, verify account limits and provider terms, keep secrets outside Git and test deployment plus schema recovery in staging. Repository readiness is not a claim that the current application is production-ready.

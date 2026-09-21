@@ -4,6 +4,8 @@
 
 Thinkink is a shared news-reading application with independently updated AI overviews, original reporting, and persistent live discussion.
 
+A limited beta is live at [thinkink.ansaldi-graphic.workers.dev](https://thinkink.ansaldi-graphic.workers.dev/).
+
 ## Current milestone
 
 The React frontend, Cloudflare Worker, static Mission page and local Supabase accounts are connected. You can create an invited test account, sign in, select a curated avatar, return to Explore, reopen account settings from the header, sign out or delete the account after password confirmation. The theme follows the system until explicitly changed; Home and Mission artwork responds to vertical scrolling and respects reduced motion.
@@ -89,7 +91,7 @@ Use `npm run dev:frontend`, `dev:backend`, `build:frontend`, and `build:backend`
 
 See [the architecture](docs/architecture.md), [implementation plan](docs/implementation-plan.md), [setup guidance](docs/local-setup.md), and [contribution guidelines](CONTRIBUTING.md).
 
-No cloud resources or deployments are created by the development or test commands. Hosted preview URLs and the workers.dev route are disabled in the initial Wrangler configuration.
+No cloud resources or deployments are created by the development or test commands. The Wrangler configuration serves the deployed Worker on its workers.dev route; hosted preview URLs remain disabled.
 
 ## Publication and license
 

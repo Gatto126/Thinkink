@@ -35,7 +35,7 @@ Automated tests use fixtures and transactionally isolated database records, not 
 
 For a real smoke test, use one meaningful topic and inspect the attempt counters before and after. Validate the resulting text and source links, then reload the topic and check that counters remain unchanged. Keep this genuinely generated topic in the database for the interview: showing it again does not depend on remaining provider quota. Start Docker/local Supabase before the demo and preserve its existing volume (`db:stop` preserves data); do not reset the database or remove Docker volumes.
 
-Free-model availability and account-wide usage elsewhere are outside this application's control. A newly created topic can therefore be partial during a provider outage, while an already completed topic stays readable from the database. Remote staging, periodic refresh coordination and live discussion remain separate work.
+Free-model availability and account-wide usage elsewhere are outside this application's control. A newly created topic can therefore be partial during a provider outage, while an already completed topic stays readable from the database. Remote staging and periodic refresh coordination remain separate work; live discussion is described in [its own guide](realtime.md).
 
 ### Local provider validation
 
