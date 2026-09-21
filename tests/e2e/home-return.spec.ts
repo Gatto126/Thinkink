@@ -40,7 +40,10 @@ for (const unavailable of [true, false]) {
       );
     });
     await page.goto('/mission/');
-    await page.getByRole('link', { name: 'Explore', exact: true }).click();
+    await page
+      .getByRole('navigation', { name: 'Main navigation' })
+      .getByRole('link', { name: 'Explore', exact: true })
+      .click();
     await expect(page.locator('.list-skeleton')).toHaveCount(2);
     await page.evaluate(() => document.fonts.ready);
     const positions = () =>

@@ -82,7 +82,10 @@ test('returning through Home and Mission keeps cached topic content visible duri
   ).toBeVisible();
   await expect(page.locator('.list-skeleton')).toHaveCount(0);
   await page.getByRole('link', { name: 'Mission', exact: true }).click();
-  await page.getByRole('link', { name: 'Explore', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('link', { name: 'Explore', exact: true })
+    .click();
   hold = true;
   await page.getByRole('link', { name: topic.title, exact: true }).click();
   await expect(
