@@ -81,7 +81,7 @@ export function Home() {
         </p>
         <div className="topic-sections">
           <TopicList
-            title="Most visited"
+            title="Hot Topic"
             items={data.mostVisited.slice(0, 3)}
             type="popular"
             loading={loading}

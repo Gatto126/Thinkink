@@ -117,6 +117,7 @@ summary:focus-visible {
   top: 12px;
 }
 .header-shell {
+  overflow-anchor: none;
   --header-progress: 0;
   --header-row-height: 68px;
   --header-search-space: 0px;
@@ -1406,15 +1407,21 @@ em {
   }
 }
 @media (max-width: 700px) {
+  /* Both React roots let the sticky shell use the full document as its range. */
+  #root,
+  #site-header-root {
+    display: contents;
+  }
   .header-shell {
-    position: relative;
+    position: sticky;
+    top: 0;
     z-index: 40;
+    /* Keep the expanded spacer without intercepting the content underneath. */
+    pointer-events: none;
   }
   .site-header {
     position: absolute;
-  }
-  .header-shell[data-pinned] > .site-header {
-    position: fixed;
+    pointer-events: auto;
   }
   .header-shell--search {
     --header-search-space: 88px;
@@ -1464,8 +1471,11 @@ em {
     padding: 22px;
   }
   .home-hero {
-    padding: 40px 0 12px;
+    padding: 16px 0 12px;
     display: block;
+  }
+  .home-intro h1 {
+    margin-top: 20px;
   }
   .perspective-art {
     --art-size: 240px;
@@ -1481,10 +1491,13 @@ em {
     position: relative;
     left: auto;
     top: auto;
-    margin: -48px auto -16px;
+    margin: -48px auto -24px;
   }
   .home-page .topic-sections {
-    gap: 20px;
+    gap: 16px;
+  }
+  .home-page .catalogue-notice {
+    margin-bottom: 0;
   }
   .header-search {
     padding: calc(4px * (1 - var(--header-progress)))

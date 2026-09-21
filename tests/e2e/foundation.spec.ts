@@ -19,9 +19,7 @@ test('home shows an empty catalogue and validates search', async ({ page }) => {
   await expect(
     page.getByRole('heading', { name: 'Latest topic' }),
   ).toBeVisible();
-  await expect(
-    page.getByRole('heading', { name: 'Most visited' }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Hot Topic' })).toBeVisible();
   await expect(
     page.getByText('Every topic starts with a question.'),
   ).toBeVisible();
@@ -292,6 +290,12 @@ for (const path of ['/', '/mission/']) {
   }) => {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.goto(path);
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      // Keep the requested wheel distance available even for the compact,
+      // empty mobile catalogue.
+      document.body.style.minHeight = '4000px';
+    });
     const center = page.locator('.art-center');
     const initial = await center.evaluate(
       (element) => new DOMMatrix(getComputedStyle(element).transform).m42,

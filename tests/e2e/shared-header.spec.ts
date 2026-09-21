@@ -93,6 +93,64 @@ test('header finishes both directions at rest and ignores small scroll reversals
   }
 });
 
+test('mobile header uses native sticky positioning through scroll start and viewport height changes', async ({
+  page,
+}) => {
+  test.skip(page.viewportSize()!.width > 700, 'Mobile native scroll behavior');
+  for (const path of ['/', '/mission/']) {
+    await page.goto(path);
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      document.body.style.minHeight = '4000px';
+    });
+    await expect(page.locator('.header-shell')).toHaveCSS('position', 'sticky');
+    const mainTop = await page
+      .locator('main')
+      .evaluate((el) => el.getBoundingClientRect().top + scrollY);
+    for (const top of [1, 24, 79, 120, 600, 30, 0, 2, 0]) {
+      await page.evaluate(async (y) => {
+        scrollTo({ top: y, behavior: 'instant' });
+        await new Promise(requestAnimationFrame);
+      }, top);
+      const pose = await page.evaluate(() => ({
+        top: document.querySelector('.site-header')!.getBoundingClientRect()
+          .top,
+        position: getComputedStyle(document.querySelector('.site-header')!)
+          .position,
+        mainTop:
+          document.querySelector('main')!.getBoundingClientRect().top + scrollY,
+      }));
+      expect(pose).toEqual({ top: 0, position: 'absolute', mainTop });
+    }
+    await page.evaluate(() => scrollTo({ top: 600, behavior: 'instant' }));
+    for (const height of [700, 850, 720]) {
+      await page.setViewportSize({ width: page.viewportSize()!.width, height });
+      await expect
+        .poll(() =>
+          page
+            .locator('.site-header')
+            .evaluate((el) => el.getBoundingClientRect().top),
+        )
+        .toBe(0);
+    }
+    // The stable expanded spacer must not block taps on content below the
+    // compact header, even though its sticky box is taller than the header.
+    await expect
+      .poll(() =>
+        page
+          .locator('.header-shell')
+          .evaluate((el) => el.style.getPropertyValue('--header-progress')),
+      )
+      .toBe('1.0000');
+    expect(
+      await page.evaluate(
+        () =>
+          document.elementFromPoint(20, 100)?.closest('.header-shell') === null,
+      ),
+    ).toBe(true);
+  }
+});
+
 test('settled header stays stable during fast scrolling without rewriting its layout', async ({
   page,
 }) => {

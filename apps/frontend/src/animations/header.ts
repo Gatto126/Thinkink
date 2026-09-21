@@ -1,5 +1,5 @@
 // Shared by the React app and the static Mission page. The stable spacer keeps
-// compaction from moving content; mobile headers follow native overscroll at top.
+// compaction from moving content; mobile pinning/overscroll is handled by CSS.
 export function attachHeaderMotion(
   shell: HTMLElement,
   animate = true,
@@ -20,7 +20,6 @@ export function attachHeaderMotion(
   let startedAt = 0;
   let appliedProgress = '';
   let geometryDirty = true;
-  let pinned: boolean | undefined;
 
   function setStyle(element: HTMLElement, name: string, value: string) {
     if (element.style.getPropertyValue(name) !== value)
@@ -30,12 +29,6 @@ export function attachHeaderMotion(
   function render(now: number) {
     frame = 0;
     const scrollY = window.scrollY;
-    // At the top, mobile CSS puts the header back in document coordinates so
-    // native pull-to-refresh carries it with the page, without JS translations.
-    if (pinned !== scrollY > 0) {
-      pinned = scrollY > 0;
-      shell.toggleAttribute('data-pinned', pinned);
-    }
     if (progress !== target) {
       const elapsed = Math.min(1, (now - startedAt) / duration);
       const eased = 1 - (1 - elapsed) ** 3;
@@ -106,19 +99,26 @@ export function attachHeaderMotion(
   render(performance.now());
   window.addEventListener('scroll', schedule, { passive: true });
   window.addEventListener('pageshow', invalidateGeometry);
-  window.addEventListener('resize', invalidateGeometry);
+  let viewportWidth = window.innerWidth;
+  function onResize() {
+    // Mobile browser bars resize the viewport height while scrolling. Header
+    // geometry depends on width; ResizeObserver handles actual element changes.
+    if (window.innerWidth === viewportWidth) return;
+    viewportWidth = window.innerWidth;
+    invalidateGeometry();
+  }
+  window.addEventListener('resize', onResize);
   reducedMotion.addEventListener('change', schedule);
   return () => {
     cancelAnimationFrame(frame);
     observer.disconnect();
     window.removeEventListener('scroll', schedule);
     window.removeEventListener('pageshow', invalidateGeometry);
-    window.removeEventListener('resize', invalidateGeometry);
+    window.removeEventListener('resize', onResize);
     reducedMotion.removeEventListener('change', schedule);
     shell.style.removeProperty('--header-progress');
     shell.style.removeProperty('--header-search-width');
     shell.style.removeProperty('--header-search-left');
-    shell.removeAttribute('data-pinned');
     if (navigation) navigation.inert = false;
     document.documentElement.style.removeProperty('--header-offset');
   };

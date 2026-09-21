@@ -88,17 +88,20 @@ test('Explore and Mission share desktop artwork and keep mobile Explore artwork 
         const caption = box('.home-art .art-caption');
         const topicsHeading = box('.section-heading h2');
         return {
+          headerGap: heading.top - box('.site-header').bottom,
           gap: art.top - heading.bottom,
           letterGap: letter.top - heading.bottom,
           topicGap: topicsHeading.top - caption.bottom,
         };
       });
+      expect(layout.headerGap).toBeGreaterThanOrEqual(24);
+      expect(layout.headerGap).toBeLessThan(48);
       expect(layout.gap).toBeGreaterThan(-32);
       expect(layout.gap).toBeLessThan(0);
       expect(layout.letterGap).toBeGreaterThan(0);
       expect(layout.letterGap).toBeLessThan(60);
       expect(layout.topicGap).toBeGreaterThanOrEqual(12);
-      expect(layout.topicGap).toBeLessThan(64);
+      expect(layout.topicGap).toBeLessThan(40);
     }
     if (width > 700) {
       expect(headings[1], `matching hero title style at ${width}px`).toEqual(

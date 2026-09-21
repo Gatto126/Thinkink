@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('fixed header completes compaction after scrolling stops without moving content or losing controls', async ({
+test('header completes compaction after scrolling stops without moving content or losing controls', async ({
   page,
 }) => {
   await page.route('**/api/auth/session', (route) =>
