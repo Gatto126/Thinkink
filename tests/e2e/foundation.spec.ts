@@ -370,8 +370,10 @@ test('artwork keeps shared scroll progress and respects the compact mobile trave
         };
       });
     }, positions);
-    expect(poses[0].rotation).toEqual(poses[1].rotation);
-    expect(poses[0].y).toBeGreaterThan(0);
-    expect(poses[0].y).toBeLessThan(poses[1].y);
+    const [home, mission] = poses;
+    if (!home || !mission) throw new Error('Both artwork poses are required');
+    expect(home.rotation).toEqual(mission.rotation);
+    expect(home.y).toBeGreaterThan(0);
+    expect(home.y).toBeLessThan(mission.y);
   }
 });
