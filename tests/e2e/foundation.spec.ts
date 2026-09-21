@@ -296,6 +296,7 @@ for (const path of ['/', '/mission/']) {
     const initial = await center.evaluate(
       (element) => new DOMMatrix(getComputedStyle(element).transform).m42,
     );
+    const compactArtwork = path === '/' && page.viewportSize()!.width <= 700;
     await page.mouse.wheel(0, 280);
     await expect
       .poll(async () =>
@@ -303,7 +304,7 @@ for (const path of ['/', '/mission/']) {
           (element) => new DOMMatrix(getComputedStyle(element).transform).m42,
         ),
       )
-      .toBeGreaterThan(initial + 25);
+      .toBeGreaterThan(initial + (compactArtwork ? 15 : 25));
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await expect(center).toHaveCSS('transform', 'none');
     await expect(page.locator('.perspective-rings')).toHaveCSS(
@@ -313,7 +314,7 @@ for (const path of ['/', '/mission/']) {
   });
 }
 
-test('artwork uses the same scroll distance on Home and Mission regardless of content height', async ({
+test('artwork keeps shared scroll progress and respects the compact mobile travel regardless of content height', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
@@ -357,5 +358,20 @@ test('artwork uses the same scroll distance on Home and Mission regardless of co
       ).toBe(positions[0]);
     }
   }
-  expect(positions[0]).toBe(positions[1]);
+  if (page.viewportSize()!.width > 700) {
+    expect(positions[0]).toBe(positions[1]);
+  } else {
+    const poses = await page.evaluate((transforms) => {
+      return transforms.map((transform) => {
+        const matrix = new DOMMatrix(transform);
+        return {
+          rotation: [matrix.a, matrix.b, matrix.c, matrix.d],
+          y: matrix.m42,
+        };
+      });
+    }, positions);
+    expect(poses[0].rotation).toEqual(poses[1].rotation);
+    expect(poses[0].y).toBeGreaterThan(0);
+    expect(poses[0].y).toBeLessThan(poses[1].y);
+  }
 });
