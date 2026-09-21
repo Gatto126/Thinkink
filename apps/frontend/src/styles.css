@@ -1324,7 +1324,7 @@ em {
 .principle {
   border-top: 1px solid var(--line);
   display: grid;
-  grid-template-columns: 180px 1fr 180px;
+  grid-template-columns: 180px minmax(0, 1fr);
   gap: 30px;
   align-items: start;
   padding: 65px 0;
@@ -1349,16 +1349,6 @@ em {
   line-height: 1.9;
   color: var(--muted);
   margin-top: 25px;
-}
-.principle-glyph {
-  color: var(--accent);
-  text-align: center;
-  font:
-    130px/1.5 Georgia,
-    serif;
-}
-.glyph-links {
-  font-family: 'DM Sans Variable', sans-serif;
 }
 .mission-closing {
   background: var(--accent-soft);
@@ -1400,10 +1390,7 @@ em {
     left: calc(50% + 50vw - 311px);
   }
   .principle {
-    grid-template-columns: 120px 1fr 90px;
-  }
-  .principle-glyph {
-    font-size: 85px;
+    grid-template-columns: 120px minmax(0, 1fr);
   }
 }
 @media (max-width: 700px) {
@@ -1637,7 +1624,7 @@ em {
     margin: 0 25px;
   }
   .principle {
-    grid-template-columns: 1fr 60px;
+    grid-template-columns: minmax(0, 1fr);
     gap: 18px 10px;
     padding: 35px 0;
   }
@@ -1650,10 +1637,6 @@ em {
   .principle p {
     font-size: 12px;
     margin-top: 20px;
-  }
-  .principle-glyph {
-    font-size: 59px;
-    padding-top: 15px;
   }
   .mission-closing {
     padding: 65px 20px;
